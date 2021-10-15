@@ -22,11 +22,20 @@
 
 
 (defn get-all-product-by-price
-    [snapshot]
-    (d/q '[:find ?name ?price
-           :keys name, price
-           :where [?product :product/value ?price]
-                  [?product :product/name ?name]] snapshot))
+  [snapshot]
+  (d/q '[:find ?name ?price
+         :keys name, price
+         :where [?product :product/value ?price]
+         [?product :product/name ?name]] snapshot))
+
+
+
+(defn get-all-product-cheaper-than
+  [snapshot, price]
+  (d/q '[:find (pull ?product [*])
+         :in $ ?p
+         :where [?product :product/value ?price]
+         [(< ?p ?price)]] snapshot price))
 
 ;USING PULL
 
@@ -37,7 +46,7 @@
 
 (defn get-all-products [snapshot]
   (d/q '[:find (pull ?identifier [*])
-         :where [?identifier :product/name  ?name]] snapshot))
+         :where [?identifier :product/name ?name]] snapshot))
 
 ; USING KEYS
 ;(defn get-all-product-by-price
@@ -54,6 +63,28 @@
          :where [?entity :product/slug ?value]]
        snapshot))
 
+(defn contains [tag]
+  (fn (
+       [item] (= tag item))))
+
+
+(defn get-products-by-tag
+  [snapshot tag-to-find]
+  (d/q
+    '[:find (pull ?identifier [*])
+      :in $ ?t
+      :where [?identifier :product/name]
+      [?identifier :product/tags ?t]] snapshot tag-to-find))
+
+(defn get-products-by-tags
+  [snapshot tag-to-find]
+  (d/q
+    '[:find (pull ?identifier [*])
+      :in $ ?t
+      :where [?identifier :product/name]
+      [?identifier :product/tags ?tag]
+      [(.contains ?t ?tag)]] snapshot tag-to-find))
+
 
 (def schema [{:db/ident       :product/name
               :db/valueType   :db.type/string
@@ -66,7 +97,10 @@
              {:db/ident       :product/value
               :db/valueType   :db.type/bigdec
               :db/cardinality :db.cardinality/one
-              :db/doc         "The product price"}])
+              :db/doc         "The product price"}
+             {:db/ident       :product/tags
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/many `:db/doc "The product keywords"}])
 
 (defn create-schema [conn]
   (d/transact conn schema))

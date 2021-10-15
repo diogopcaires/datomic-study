@@ -21,7 +21,7 @@
     @(d/transact conn [[:db/add product-id :product/value 200.00M]])
     @(d/transact conn [[:db/retract product-id :product/slug "smartphone"]])))
 
-(db/delete-database)
+;(db/delete-database)
 ; se vc n quer o slug só n colocar
 ;(let [object {:product/name "Radio with clock" :product/slug nil}]
 ;  (d/transact conn [object]))
